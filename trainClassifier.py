@@ -16,14 +16,14 @@ vehiclesPath = 'vehicles'
 nonVehiclesPath = 'non-vehicles'
 
 #Select which features to use
-spatial_feat=True
-hist_feat=True
+spatial_feat=False
+hist_feat=False
 hog_feat=True
 #Features parameters
 color_space='YCrCb'
 spatial_size=(32, 32)
 hist_bins=32
-orient=9
+orient=8
 pix_per_cell=8
 cell_per_block=2
 hog_channel='ALL'#'GRAY'
@@ -49,7 +49,7 @@ def loadFeatures():
         img = cv2.imread(nonVehicleFiles[i])
         imfeatures = extract_features(img,color_space,spatial_size,hist_bins,orient,pix_per_cell,cell_per_block,hog_channel,spatial_feat,hist_feat,hog_feat)
         notcar_features.append(imfeatures)
-
+    print(car_features[0].shape)
     X = np.vstack((car_features, notcar_features)).astype(np.float64)
     # Fit a per-column scaler
     X_scaler = StandardScaler().fit(X)
@@ -91,5 +91,12 @@ def loadPickledClassifier(classifier):
     scaler = joblib.load('scaler.pkl')
     return svc,scaler
 def search(img,windows,svc,scaler):
-    found = search_windows(img,windows,svc,scaler,color_space,spatial_size,hist_bins,hist_range,orient,pix_per_cell,cell_per_block,hog_channel,spatial_feat,hist_feat,hog_feat);
+    scales = [1.5,2]
+    start = [400,400]
+    stop = [img.shape[0]-64,img.shape[0],img.shape[0]]
+    found = []
+    for i in range(len(scales)):
+        print(i)
+        found = found + find_cars(img,start[i],stop[i],scales[i],svc,scaler,spatial_size,hist_bins,orient,pix_per_cell,cell_per_block,spatial_feat,hist_feat,hog_feat)
+    print(found)
     return found

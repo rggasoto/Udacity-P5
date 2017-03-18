@@ -13,7 +13,8 @@ from trainClassifier import *
 from scipy.ndimage.measurements import label
 
 cap = cv2.VideoCapture('project_video.mp4')
-
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+videoout = cv2.VideoWriter('output2.mov',fourcc, 30.0,( 1280,720))
 svc,scaler = loadPickledClassifier('trained_model3.pkl')
 test_img = cv2.imread('test_images/test5.jpg')
 windows_large = slide_window(test_img,y_start_stop=(336,test_img.shape[0]),xy_window=(256,256),xy_overlap=(0.5, 0.5));
@@ -47,12 +48,13 @@ while cap.isOpened():
     #     continue
     if not ret:
         break
-    found_vehicles=  search(test_img,all_windows,svc,scaler)#search_windows(img,all_windows,svc,scaler,color_space,spatial_size,hist_bins,hist_range,orient,pix_per_cell,cell_per_block,hog_channel,spatial_feat,hist_feat,hog_feat);
-    found = draw_boxes(test_img,found_vehicles,color = (0,255,0),thick = 1)
-    heat = add_heat(heat,found_vehicles)
-
-    heat = apply_threshold(heat,2)
-    heat = np.clip(heat, 0, 255)
+    found_vehicles=  search(img,all_windows,svc,scaler)#search_windows(img,all_windows,svc,scaler,color_space,spatial_size,hist_bins,hist_range,orient,pix_per_cell,cell_per_block,hog_channel,spatial_feat,hist_feat,hog_feat);
+    found = draw_boxes(img,found_vehicles,color = (0,255,0),thick = 1)
+    new_heat = np.zeros(test_img.shape[0:2],dtype='float64')
+    new_heat = add_heat(new_heat,found_vehicles)
+    new_heat = cv2.blur(new_heat,(8,8))
+    new_heat = apply_threshold(new_heat,8)
+    heat = np.clip((heat+new_heat)/2, 0, 255)
     # kernel = np.ones((8,8),np.float64)
     # heat = cv2.morphologyEx(np.float64(heat[:,:]), cv2.MORPH_CLOSE, kernel)
     #add more windows in the region of interest of a prossibly matched vehicle
@@ -76,16 +78,19 @@ while cap.isOpened():
     #
     #     more_windows = slide_window(test_img,x_start_stop=(int(x_start),int(x_end)),y_start_stop=(int(y_start),int(y_end)),xy_window=(int(size),int(size)),xy_overlap=(0.95, 0.95))
     #     found_vehicle=  search_windows(img,more_windows,svc,scaler,color_space,spatial_size,hist_bins,hist_range,orient,pix_per_cell,cell_per_block,hog_channel,spatial_feat,hist_feat,hog_feat);
-    #     heat_car = add_heat(np.copy(heat),found_vehicles)
+    #     heat_car = add_heat(np.copy(heat),found_vehicles)q
     #     found = draw_boxes(found,found_vehicle,color = (0,0,255),thick = 1)
     #     heat += heat_car
     # heat = apply_threshold(heat,5)
-    heat = np.clip(heat, 0, 255)
-    cv2.imshow('test',draw_labeled_bboxes(found,labels))
+    out_img = draw_labeled_bboxes(found,labels)
+    cv2.imshow('test',out_img)
+    videoout.write(out_img)
     cv2.waitKey(1)
     #fig = plt.figure()
     # plt.imshow(cv2.resize(heat,(int(img.shape[1]/2),int(img.shape[0]/2))),cmap = 'hot')
     # plt.pause(0.05)
     #fig.tight_layout()
     #plt.show(block = False)
-    heat = cool_down(heat,0.2)
+    heat = cool_down(heat,.5)
+cap.release()
+videoout.release()
