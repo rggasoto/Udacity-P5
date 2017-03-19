@@ -16,14 +16,14 @@ vehiclesPath = 'vehicles'
 nonVehiclesPath = 'non-vehicles'
 
 #Select which features to use
-spatial_feat=False
-hist_feat=False
+spatial_feat=True
+hist_feat=True
 hog_feat=True
 #Features parameters
 color_space='YCrCb'
 spatial_size=(32, 32)
 hist_bins=32
-orient=8
+orient=9
 pix_per_cell=8
 cell_per_block=2
 hog_channel='ALL'#'GRAY'
@@ -72,14 +72,18 @@ if __name__ == "__main__":
     X_train, X_test,y_train,y_test,X_scaler = loadFeatures()
     t2 = time.time()
     print(round(t2-t, 2), 'Seconds to load Features...')
-    svc = LinearSVC()
+    svc = LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
+     intercept_scaling=1, loss='squared_hinge', max_iter=1000,
+     multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,
+     verbose=0)
     # Check the training time for the SVC
     t=time.time()
     svc.fit(X_train, y_train)
     t2 = time.time()
     print(round(t2-t, 2), 'Seconds to train SVC...')
     # Check the score of the SVC
-    print('Test Accuracy of SVC = ', round(svc.score(X_test, y_test), 4))
+    print('Test Accuracy of SVC on Train Data= ', round(svc.score(X_train, y_train), 4))
+    print('Test Accuracy of SVC on Test Data= ', round(svc.score(X_test, y_test), 4))
     # Check the prediction time for a single sample
     t=time.time()
     joblib.dump(X_scaler,'scaler.pkl')
@@ -91,9 +95,9 @@ def loadPickledClassifier(classifier):
     scaler = joblib.load('scaler.pkl')
     return svc,scaler
 def search(img,windows,svc,scaler):
-    scales = [1.5,2]
-    start = [400,400]
-    stop = [img.shape[0]-64,img.shape[0],img.shape[0]]
+    scales = [1.5,1]
+    start = [400,400,400]
+    stop = [656,img.shape[0],img.shape[0]]
     found = []
     for i in range(len(scales)):
         print(i)

@@ -117,10 +117,11 @@ def extract_features(image, color_space='RGB', spatial_size=(32, 32),
 def find_cars(img, ystart, ystop, scale, svc, X_scaler,spatial_size, hist_bins, orient, pix_per_cell, cell_per_block,spatial_feat,hist_feat,hog_feat ):
 
     draw_img = np.copy(img)
-    img = img.astype(np.float32)/255
     img_boxes = []
     img_tosearch = img[ystart:ystop,:,:]
     ctrans_tosearch = cv2.cvtColor(img_tosearch,cv2.COLOR_BGR2YCrCb)
+    ctrans_tosearch = ctrans_tosearch.astype(np.float32)/255
+
     if scale != 1:
         imshape = ctrans_tosearch.shape
         ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1]/scale), np.int(imshape[0]/scale)))
@@ -150,7 +151,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler,spatial_size, hist_bins, 
             ypos = int(yb*cells_per_step)
             xpos = int(xb*cells_per_step)
             # Extract HOG for this patch
-            print( hog1[ypos:ypos+nblocks_per_window, xpos:xpos+nblocks_per_window].shape)
+            # print( hog1[ypos:ypos+nblocks_per_window, xpos:xpos+nblocks_per_window].shape)
 
             hog_feat1 = hog1[ypos:ypos+nblocks_per_window, xpos:xpos+nblocks_per_window].ravel()
             hog_feat2 = hog2[ypos:ypos+nblocks_per_window, xpos:xpos+nblocks_per_window].ravel()
@@ -180,7 +181,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler,spatial_size, hist_bins, 
             features = np.concatenate(features)
             #(spatial_features.reshape(1, -1), hist_features.reshape(1, -1), hog_features.reshape(1, -1)
             features = features.reshape(1,-1)
-            print(features.shape)
+            # print(features.shape)
             #print(features.shape)
             test_features = X_scaler.transform(features)
             #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))

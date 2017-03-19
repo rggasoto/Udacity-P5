@@ -14,7 +14,7 @@ from scipy.ndimage.measurements import label
 
 cap = cv2.VideoCapture('project_video.mp4')
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-videoout = cv2.VideoWriter('output2.mov',fourcc, 30.0,( 1280,720))
+videoout = cv2.VideoWriter('output3.mov',fourcc, 30.0,( 1280,720))
 svc,scaler = loadPickledClassifier('trained_model3.pkl')
 test_img = cv2.imread('test_images/test5.jpg')
 windows_large = slide_window(test_img,y_start_stop=(336,test_img.shape[0]),xy_window=(256,256),xy_overlap=(0.5, 0.5));
@@ -53,12 +53,14 @@ while cap.isOpened():
     new_heat = np.zeros(test_img.shape[0:2],dtype='float64')
     new_heat = add_heat(new_heat,found_vehicles)
     new_heat = cv2.blur(new_heat,(8,8))
-    new_heat = apply_threshold(new_heat,8)
-    heat = np.clip((heat+new_heat)/2, 0, 255)
+    heat = np.clip(new_heat, 0, 255)
+    print(np.max(heat))
     # kernel = np.ones((8,8),np.float64)
     # heat = cv2.morphologyEx(np.float64(heat[:,:]), cv2.MORPH_CLOSE, kernel)
     #add more windows in the region of interest of a prossibly matched vehicle
-    labels = label(heat)
+    thresh = apply_threshold(heat,6 )
+
+    labels = label(thresh)
     # more_windows = []
     # for car_number in range(1, labels[1]+1):
     #     # Find pixels with each car_number label value
@@ -85,12 +87,15 @@ while cap.isOpened():
     out_img = draw_labeled_bboxes(found,labels)
     cv2.imshow('test',out_img)
     videoout.write(out_img)
+    showHeat = cv2.applyColorMap(heat, cv2.COLORMAP_JET)
+    cv2.imshow('heat',cv2.resize(showHeat,(int(img.shape[1]/2),int(img.shape[0]/2))))
     cv2.waitKey(1)
+
     #fig = plt.figure()
     # plt.imshow(cv2.resize(heat,(int(img.shape[1]/2),int(img.shape[0]/2))),cmap = 'hot')
     # plt.pause(0.05)
     #fig.tight_layout()
     #plt.show(block = False)
-    heat = cool_down(heat,.5)
+    heat = cool_down(heat,.8)
 cap.release()
 videoout.release()
