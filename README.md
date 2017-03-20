@@ -1,33 +1,83 @@
-# Vehicle Detection
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-
-In this project, your goal is to write a software pipeline to detect vehicles in a video (start with the test_video.mp4 and later implement on full project_video.mp4), but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
-
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
-
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You can submit your writeup in markdown or use another method and submit a pdf instead.
-
-The Project
----
+**Vehicle Detection Project**
 
 The goals / steps of this project are the following:
 
 * Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
+* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector.
 * Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
 * Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
 * Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
 
-Here are links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train your classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself.   You are welcome and encouraged to take advantage of the recently released [Udacity labeled dataset](https://github.com/udacity/self-driving-car/tree/master/annotations) to augment your training data.  
+[//]: # (Image References)
+[image1]: ./output_images/hist_hog.png
+[image2]: ./output_images/sliding_windows.png
+[image3]: ./output_images/heatmap.png
+[image4]: ./output_images/carsfound.png
+[video1]: ./project_video.mp4
 
-Some example images for testing your pipeline on single frames are located in the `test_images` folder.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include them in your writeup for the project by describing what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
 
-**As an optional challenge** Once you have a working pipeline for vehicle detection, add in your lane-finding algorithm from the last project to do simultaneous lane-finding and vehicle detection!
+##Extracting Features from the dataset
 
-**If you're feeling ambitious** (also totally optional though), don't stop there!  We encourage you to go out and take video of your own, and show us how you would implement this project on a new video!
+The feature extraction and training of the classifier are available in the code file `trainClassifier.py`, which contains the classifier configuration.
+
+The dataset was divided in  `vehicle` and `non-vehicle` images.  The images are then passed in a feature extractor, that extracts spatial features, the histogram on `YCrCb` channel, and the HOG features.
+
+The miage below show a comparison between a vehicle and a non-vehicle image. It can be seen that while the histogram have some differences, specially in Y channel, the major change comes from the HOG, that contains significantly different features between vehicles and non-vehicles.
+![alt text][image1]
+
+####2. Parameters Configuration
+
+The parameters were configured using experimental analysis by verifying the final accuracy on the test images. As a cross-section of 20% from the dataset was used to evaluate the classifier performance, the test was performed 5 times in each of the selected configurations. The spatial size and number of bins for the histogram were set fixed to (32,32) and 32, respectively, while the HOG features were configured as follows:
+
+|Configuration | orientations| Pix per cell|cells per block| channel |
+|:---:|:---:|:---:|:---:|:---:|
+|1 |9|8|2|All|
+|2 |8|8|2|All|
+|3 |9|8|2|Y  |
+|4 |8|16|2|All|
+|5 |12|8|2|Y|
+
+Out of all configurations, the one that performed better with reasonable computing time was configuration 1, which was selected for the remainder of the project.
+
+
+####3. Classifier Training
+
+The classifier of choice was a Linear SVM. The parameters used for the training were Penalty C = 1.0, tolerance of 0.0001, and internal scaling and normalizer for the classifier (meaning the images don't need to be normalized and zero mean, as sklearn handles that internally).
+
+###Vehicle Search
+
+In order to search for the vehicle, one could pick sub-images from the frame and check whether the vehicle is there. However, when the windows overlap this technique is inefficient as many of the features on the overlapping areas are computed more than once. This is of particular importance as extracting the HOG features is an expensive procedure.
+Instead, what was done was compute one histogram for the entire search region, and then select the features in the sub-image region out of the HOG. In order to search windows larger or smaller than the original 64x64 trained image, the frame is scaled down or up, in order to accommodate for the new image size searched.
+
+In the pipeline, three regions of search were used, one with scales `[1.5,1.,0.8]`. The overlapping was done by advancing one cell in the HOG space, resulting in 75% overlapping in all regions. Thinner line represents where each window starts, medium lines give a sense on the size of each scale, while the outer bounds is the complete searched space.
+
+
+![alt text][image2]
+
+
+---
+
+### Video Implementation
+
+Here's a [link to the video](./output.mov)
+
+
+#### Filtering out bad readings.
+  Although the classifier passed with 99.3% accuracy in the dataset, it still collects a reasonable amount of noise when applied to the video. in order to filter this noise out, a heat map was applied to the overlapping measurements. Whenever 4 overlapping measurements collect a vehicle, it will be passed on a persistence filter, that only allows it to display after seen for some frames. the same persistence model only allows a measurement to leave screen after it is not detected for a certain amount of frames too.
+  This effectively removed the noise on the video, leaving only vehicle measurements.
+
+Here's an image of the heatmap, and the detected vehicles obtained from it
+![alt text][image3]
+![alt text][image4]
+
+
+
+---
+
+###Discussion
+
+####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+
+Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  

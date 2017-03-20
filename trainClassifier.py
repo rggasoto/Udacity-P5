@@ -94,10 +94,10 @@ def loadPickledClassifier(classifier):
     svc = joblib.load(classifier)
     scaler = joblib.load('scaler.pkl')
     return svc,scaler
-def search(img,windows,svc,scaler):
-    scales = [1.5,1]
+def search(img,svc,scaler):
+    scales = [1.5,1,0.8]
     start = [400,400,400]
-    stop = [656,img.shape[0],img.shape[0]]
+    stop = [656,img.shape[0]-160,500]
     found = []
     for i in range(len(scales)):
         print(i)
