@@ -24,7 +24,7 @@ The feature extraction and training of the classifier are available in the code 
 
 The dataset was divided in  `vehicle` and `non-vehicle` images.  The images are then passed in a feature extractor, that extracts spatial features, the histogram on `YCrCb` channel, and the HOG features.
 
-The miage below show a comparison between a vehicle and a non-vehicle image. It can be seen that while the histogram have some differences, specially in Y channel, the major change comes from the HOG, that contains significantly different features between vehicles and non-vehicles.
+The image below show a comparison between a vehicle and a non-vehicle image. It can be seen that while the histogram have some differences, specially in Y channel, the major change comes from the HOG, that contains significantly different features between vehicles and non-vehicles.
 ![alt text][image1]
 
 ### Parameters Configuration
